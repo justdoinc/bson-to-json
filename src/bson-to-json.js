@@ -42,6 +42,8 @@ const TRUE = Buffer.from("true");
 const FALSE = Buffer.from("false");
 const NULL = Buffer.from("null");
 
+const QUOTED_EJSON_DATE_KEY = Buffer.from('"$date"');
+
 // Returns the number of digits in a null-terminated string representation of v.
 function nDigits(v) {
 	if (v < 10) return 2;
@@ -324,8 +326,17 @@ class Transcoder {
 				const highBits = readInt32LE(in_, inIdx);
 				inIdx += 4;
 				const ms = new Long(lowBits, highBits).toNumber();
-				const value = Buffer.from(new Date(ms).toISOString());
-				this.addQuotedVal(value);
+
+				// EJSON output
+				this.out[this.outIdx++] = OPENCURL;
+				this.addVal(QUOTED_EJSON_DATE_KEY);
+				this.out[this.outIdx++] = COLON;
+				this.addVal(Buffer.from(ms.toString()));
+				this.out[this.outIdx++] = CLOSECURL;
+
+				// JSON output
+				// const value = Buffer.from(new Date(ms).toISOString());
+				// this.addQuotedVal(value);
 				break;
 			}
 			case BSON_DATA_BOOLEAN: {
