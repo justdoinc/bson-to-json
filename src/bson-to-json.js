@@ -97,6 +97,11 @@ function hex(nibble) {
 class Transcoder {
 	constructor() {
 		this.outIdx = 0;
+		this.document_id_found = false;
+		this.document_id_jsoned = null; // _id might not be a String. We don't want to waste resources
+										// to create a JS object out of it when it might not be necessary
+										// for the usecase. Therefore, we return the document_id in a JSON
+										// format and not as a JS val.
 	}
 
 	/**
@@ -243,6 +248,9 @@ class Transcoder {
 		this.out[this.outIdx++] = isArray? OPENSQ : OPENCURL;
 
 		while (true) {
+			let current_key_is_document_id = false;
+			let valBegin = null;
+
 			const elementType = in_[inIdx++];
 			if (elementType === 0) break;
 
@@ -259,6 +267,8 @@ class Transcoder {
 				// we search.
 				let nameStart = inIdx;
 				let nameEnd = inIdx;
+				let keyBegin = null
+
 				while (in_[nameEnd] !== 0 && nameEnd < inLen)
 					nameEnd++;
 	
@@ -267,12 +277,22 @@ class Transcoder {
 
 				this.ensureSpace(1);
 				this.out[this.outIdx++] = QUOTE;
+				keyBegin = this.outIdx;
 				this.writeStringRange(in_, nameStart, nameEnd);
+
+				if (!this.document_id_found) {
+					if (this.out.toString("utf8", keyBegin, this.outIdx) == "_id") {
+						current_key_is_document_id = true;
+					}
+				}
+
 				inIdx = nameEnd + 1; // +1 to skip null terminator
 				this.ensureSpace(2);
 				this.out[this.outIdx++] = QUOTE;
 				this.out[this.outIdx++] = COLON;
 			}
+
+			valBegin = this.outIdx;
 
 			switch (elementType) {
 			case BSON_DATA_STRING: {
@@ -399,6 +419,11 @@ class Transcoder {
 				throw new Error("Unknown BSON type " + elementType);
 			}
 
+			if (current_key_is_document_id) {
+				this.document_id_found = true;
+				this.document_id_jsoned = this.out.toString("utf8", valBegin, this.outIdx);
+			}
+
 			arrIdx++;
 		}
 
@@ -411,7 +436,8 @@ exports.bsonToJson = function bsonToJson(doc, isArray) {
 	if (!(doc instanceof Uint8Array))
 		throw new Error("Input must be a buffer");
 	const t = new Transcoder();
-	return t.transcode(doc, isArray);
+	const raw_doc_json_buffer = t.transcode(doc, isArray);
+	return [raw_doc_json_buffer, t.document_id_jsoned];
 };
 
 exports.ISE = "JavaScript";
