@@ -95,7 +95,7 @@ function hex(nibble) {
 }
 
 class Transcoder {
-	constructor() {
+	constructor(options) {
 		this.outIdx = 0;
 		this.document_id_found = false;
 		this.document_id_jsoned = null; // _id might not be a String. We don't want to waste resources
@@ -432,10 +432,10 @@ class Transcoder {
 	}
 }
 
-exports.bsonToJson = function bsonToJson(doc, isArray) {
+exports.bsonToJson = function bsonToJson(doc, transcoder_options, isArray) {
 	if (!(doc instanceof Uint8Array))
 		throw new Error("Input must be a buffer");
-	const t = new Transcoder();
+	const t = new Transcoder(transcoder_options);
 	const raw_doc_json_buffer = t.transcode(doc, isArray);
 	return [raw_doc_json_buffer, t.document_id_jsoned];
 };
