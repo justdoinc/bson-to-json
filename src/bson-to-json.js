@@ -102,6 +102,8 @@ class Transcoder {
 										// to create a JS object out of it when it might not be necessary
 										// for the usecase. Therefore, we return the document_id in a JSON
 										// format and not as a JS val.
+
+		this._id_field_name = (typeof options !== "undefined" && options !== null ? options.custom_id_field_name : void 0) || "_id"; // COFFEE: this._id_field_name = options?.custom_id_field_name or "_id"
 	}
 
 	/**
@@ -281,7 +283,7 @@ class Transcoder {
 				this.writeStringRange(in_, nameStart, nameEnd);
 
 				if (!this.document_id_found) {
-					if (this.out.toString("utf8", keyBegin, this.outIdx) == "_id") {
+					if (this.out.toString("utf8", keyBegin, this.outIdx) == this._id_field_name) {
 						current_key_is_document_id = true;
 					}
 				}
