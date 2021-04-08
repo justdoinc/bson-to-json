@@ -104,6 +104,7 @@ class Transcoder {
 										// format and not as a JS val.
 
 		this._id_field_name = (typeof options !== "undefined" && options !== null ? options.custom_id_field_name : void 0) || "_id"; // COFFEE: this._id_field_name = options?.custom_id_field_name or "_id"
+		this.skip_id_transcoding = (typeof options !== "undefined" && options !== null ? options.skip_id_transcoding : void 0) || false; // COFFEE: this.skip_id_transcoding = options?.skip_id_transcoding or false
 	}
 
 	/**
@@ -252,6 +253,8 @@ class Transcoder {
 		while (true) {
 			let current_key_is_document_id = false;
 			let valBegin = null;
+
+			let outIdxStateRoundInBeginning = this.outIdx;
 
 			const elementType = in_[inIdx++];
 			if (elementType === 0) break;
@@ -424,6 +427,12 @@ class Transcoder {
 			if (current_key_is_document_id) {
 				this.document_id_found = true;
 				this.document_id_jsoned = this.out.toString("utf8", valBegin, this.outIdx);
+
+				if (this.skip_id_transcoding) {
+					// Move cursor back to where it was in the beginning of the round, to remove transcoded output
+					this.outIdx = outIdxStateRoundInBeginning;
+					continue; // to avoid the ops bellow that adds a comma, which is unnecessary, continue the while loop to the next field.
+				}
 			}
 
 			arrIdx++;
