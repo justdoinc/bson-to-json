@@ -15,9 +15,5 @@
     "bson": "^4.0.2",
     "mocha": "^6.2.2",
     "mongodb": "^3.5.6"
-  },
-  "scripts": {
-    "install": "node-gyp rebuild || exit 0",
-    "test": "mocha"
   }
 }
