@@ -44,6 +44,10 @@ const NULL = Buffer.from("null");
 
 const QUOTED_EJSON_DATE_KEY = Buffer.from('"$date"');
 
+const REGEX_VALUE_PREFIX = Buffer.from('{"$regexp":"');
+const REGEX_VALUE_MIDDLE = Buffer.from('","$flags":"');
+const REGEX_VALUE_SUFFIX = Buffer.from('"}');
+
 // Returns the number of digits in a null-terminated string representation of v.
 function nDigits(v) {
 	if (v < 10) return 2;
@@ -314,6 +318,37 @@ class Transcoder {
 				this.out[this.outIdx++] = QUOTE;
 				break;
 			}
+			case BSON_DATA_REGEXP: {
+				let patternStart = inIdx;
+				let patternEnd = inIdx;
+
+				while (in_[patternEnd] !== 0 && patternEnd < inLen)
+					patternEnd++;
+	
+				if (patternEnd >= inLen)
+					throw new Error("Bad BSON Document: illegal CString provided for a RegExp pattern");
+
+				inIdx = patternEnd + 1; // +1 to skip null terminator
+
+				let flagsStart = inIdx;
+				let flagsEnd = inIdx;
+
+				while (in_[flagsEnd] !== 0 && flagsEnd < inLen)
+					flagsEnd++;
+	
+				if (flagsEnd >= inLen)
+					throw new Error("Bad BSON Document: illegal CString provided for a RegExp flags");
+
+				inIdx = flagsEnd + 1; // +1 to skip null terminator
+
+				this.addVal(REGEX_VALUE_PREFIX);
+				this.writeStringRange(in_, patternStart, patternEnd);
+				this.addVal(REGEX_VALUE_MIDDLE);
+				this.writeStringRange(in_, flagsStart, flagsEnd);
+				this.addVal(REGEX_VALUE_SUFFIX);
+
+				break;
+			}
 			case BSON_DATA_OID: {
 				if (inIdx + 12 > inLen)
 					throw new Error("Truncated BSON (in ObjectId)");
@@ -411,7 +446,6 @@ class Transcoder {
 				break;
 			case BSON_DATA_DECIMAL128:
 			case BSON_DATA_BINARY:
-			case BSON_DATA_REGEXP:
 			case BSON_DATA_SYMBOL:
 			case BSON_DATA_TIMESTAMP:
 			case BSON_DATA_MIN_KEY:
@@ -419,7 +453,7 @@ class Transcoder {
 			case BSON_DATA_CODE:
 			case BSON_DATA_CODE_W_SCOPE:
 			case BSON_DATA_DBPOINTER:
-				throw new Error("BSON type incompatible with JSON");
+				throw new Error("BSON type incompatible with JSON elementType:" + elementType);
 			default:
 				throw new Error("Unknown BSON type " + elementType);
 			}
