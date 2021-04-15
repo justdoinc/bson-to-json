@@ -1,0 +1,25 @@
+2021.04.15, Version 2.0.0
+
+* Output EJSON instead of JSON
+
+ * Add support for regexp values serialization to EJSON
+
+ * Output dates in the EJSON instead of the JSON format
+
+* Transcoder: 
+
+ * introduce a new option that allows skipping the transcoding of the id field
+
+ * Allow setting a custom _id field_name
+
+ * instead of returning only a String with raw_doc_json_buffer, return an
+ array: [raw_doc_json_buffer, document_id_jsoned].
+
+* Block CPP code:
+
+ * package.json: do not attempt to build the outdated cpp code
+ 
+ * Remove binding.gyp
+ 
+ * Force using the js implementation only (until we'll perform the changes on
+ the cpp implementation)

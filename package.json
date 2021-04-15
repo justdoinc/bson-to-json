@@ -1,8 +1,8 @@
 {
   "name": "bson-to-json",
-  "version": "1.0.1",
+  "version": "2.0.0",
   "description": "Direct BSON to JSON transcoder.",
-  "repository": "https://github.com/zbjornson/bson-to-json",
+  "repository": "https://github.com/justdoinc/bson-to-json",
   "author": "zbjornson",
   "license": "MIT",
   "dependencies": {
